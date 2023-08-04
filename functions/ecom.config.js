@@ -7,8 +7,8 @@
 
 const app = {
   app_id: 115617,
-  title: 'My Awesome E-Com Plus App',
-  slug: 'my-awesome-app',
+  title: 'Boleto Banrisul',
+  slug: 'banrisul',
   type: 'external',
   state: 'active',
   authentication: true,

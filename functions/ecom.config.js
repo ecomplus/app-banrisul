@@ -34,13 +34,13 @@ const app = {
      * Triggered when listing payments, must return available payment methods.
      * Start editing `routes/ecom/modules/list-payments.js`
      */
-    // list_payments:        { enabled: true },
+    list_payments:        { enabled: true },
 
     /**
      * Triggered when order is being closed, must create payment transaction and return info.
      * Start editing `routes/ecom/modules/create-transaction.js`
      */
-    // create_transaction:   { enabled: true },
+    create_transaction:   { enabled: true },
   },
 
   /**
@@ -82,7 +82,7 @@ const app = {
       // 'DELETE',        // Delete customers
     ],
     orders: [
-      // 'GET',           // List/read orders with public and private fields
+      'GET',           // List/read orders with public and private fields
       // 'POST',          // Create orders
       // 'PATCH',         // Edit orders
       // 'PUT',           // Overwrite orders
@@ -106,7 +106,7 @@ const app = {
     ],
     'orders/payments_history': [
       // 'GET',           // List/read order payments history events
-      // 'POST',          // Create payments history entry with new status
+      'POST',          // Create payments history entry with new status
       // 'DELETE',        // Delete payments history entry
     ],
 
@@ -138,37 +138,174 @@ const app = {
   },
 
   admin_settings: {
-    /**
-     * JSON schema based fields to be configured by merchant and saved to app `data` / `hidden_data`, such as:
-
-     webhook_uri: {
-       schema: {
-         type: 'string',
-         maxLength: 255,
-         format: 'uri',
-         title: 'Notifications URI',
-         description: 'Unique notifications URI available on your Custom App dashboard'
-       },
-       hide: true
-     },
-     token: {
-       schema: {
-         type: 'string',
-         maxLength: 50,
-         title: 'App token'
-       },
-       hide: true
-     },
-     opt_in: {
-       schema: {
-         type: 'boolean',
-         default: false,
-         title: 'Some config option'
-       },
-       hide: false
-     },
-
-     */
+    client_id: {
+      schema: {
+        type: 'string',
+        maxLength: 255,
+        title: 'Client Id',
+        // description: ''
+      },
+      hide: true
+    },
+    client_secret: {
+      schema: {
+        type: 'string',
+        maxLength: 255,
+        title: 'Client Secret',
+        // description: ''
+      },
+      hide: true
+    },
+    beneficiary_code: {
+      schema: {
+        type: 'string',
+        maxLength: 13,
+        title: 'Código beneficiário',
+        description: 'Seu código de beneficiário no Banrisul (13 dígitos)'
+      },
+      hide: true
+    },
+    is_homologation: {
+      schema: {
+        type: 'boolean',
+        title: 'Ambiente de Homologação',
+        description: 'Habilitar ambiente para Homologação',
+        default: false
+      },
+      hide: false
+    },
+    days_to_expiry: {
+      schema:{
+        type: 'integer',
+        minimum: 1,
+        maximum: 999,
+        default: 7,
+        title: 'Dias corridos até o vencimento',
+        description: 'Representa diferença de dias entre a data da requisição e a data de vencimento'
+      },
+      hide: false
+    },
+    fees: {
+      schema: {
+        type: 'object',
+        required: [
+          'value'
+        ],
+        title: 'Juros',
+        description: 'Juros a ser aplicado nos boletos após vencimento',
+        additionalProperties: false,
+        properties: {
+          type: {
+            type: 'string',
+            enum: [
+              'percentual',
+              'fixo',
+              'isento'
+            ],
+            default: 'isento',
+            title: 'Tipo de juros',
+            description: 'Se fixo valor diário, se percentual taxa mensal'
+          },
+          value: {
+            type: 'number',
+            minimum: 0,
+            maximum: 99999999,
+            title: 'Valor do juros',
+            description: 'Valor percentual ou fixo a ser acrescentado, dependendo to tipo configurado'
+          }
+        }
+      },
+      hide: false
+    },
+    tax: {
+      schema: {
+        type: 'object',
+        required: [
+          'value'
+        ],
+        title: 'Multa',
+        description: 'Multa a ser aplicada nos boletos após vencimento',
+        additionalProperties: false,
+        properties: {
+          disable: {
+            type: 'boolean',
+            default: true,
+            title: 'Desabilitar multa'
+          },
+          type: {
+            type: 'string',
+            enum: [
+              'percentual',
+              'fixa'
+            ],
+            default: 'percentual',
+            title: 'Tipo de multa',
+            description: 'Multa com valor percentual ou fixo'
+          },
+          value: {
+            type: 'number',
+            minimum: 0,
+            maximum: 99999999,
+            title: 'Valor da multa',
+            description: 'Valor percentual ou fixo a ser acrescentado, dependendo to tipo configurado'
+          }
+        }
+      },
+      hide: false
+    },
+    discount: {
+      schema: {
+        type: 'object',
+        required: [
+          'value'
+        ],
+        title: 'Desconto',
+        additionalProperties: false,
+        properties: {
+          disable: {
+            type: 'boolean',
+            default: false,
+            title: 'Desabilitar desconto'
+          },
+          apply_at: {
+            type: 'string',
+            enum: [
+              'total',
+              'subtotal',
+              'freight'
+            ],
+            default: 'subtotal',
+            title: 'Aplicar desconto em',
+            description: 'Em qual valor o desconto deverá ser aplicado no checkout'
+          },
+          min_amount: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 999999999,
+            title: 'Pedido mínimo',
+            description: 'Montante mínimo para aplicar o desconto'
+          },
+          type: {
+            type: 'string',
+            enum: [
+              'percentage',
+              'fixed'
+            ],
+            default: 'percentage',
+            title: 'Tipo de desconto',
+            description: 'Desconto com valor percentual ou fixo'
+          },
+          value: {
+            type: 'number',
+            minimum: 0,
+            maximum: 99999999,
+            title: 'Valor do desconto',
+            description: 'Valor percentual ou fixo a ser descontado, dependendo to tipo configurado'
+          }
+        }
+      },
+      hide: false
+    }
   }
 }
 

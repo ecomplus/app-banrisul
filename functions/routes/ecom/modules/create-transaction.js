@@ -1,4 +1,10 @@
-exports.post = ({ appSdk, admin }, req, res) => {
+const { baseUri } = require('../../../__env')
+const Banrisul = require('../../../lib/banrisul/auth/create-access')
+const getOurNumber = require('../../../lib/banrisul/calculate-our-number')
+const createBodyToBillet = require('../../../lib/banrisul/payload-to-billet')
+
+exports.post = async ({ appSdk, admin }, req, res) => {
+  const collectionBillet = admin.firestore().collection('billets')
   /**
    * Requests coming from Modules API have two object properties on body: `params` and `application`.
    * `application` is a copy of your app installed by the merchant,
@@ -17,33 +23,91 @@ exports.post = ({ appSdk, admin }, req, res) => {
   // merge all app options configured by merchant
   const appData = Object.assign({}, application.data, application.hidden_data)
   // setup required `transaction` response object
-  const transaction = {}
 
+  const { amount } = params
+  const orderId = params.order_id
   // indicates whether the buyer should be redirected to payment link right after checkout
   let redirectToPayment = false
-
-  /**
-   * Do the stuff here, call external web service or just fill the `transaction` object
-   * according to the `appData` configured options for the chosen payment method.
-   */
-
-  // WIP:
-  switch (params.payment_method.code) {
-    case 'credit_card':
-      // you may need to handle card hash and create transaction on gateway API
-      break
-    case 'banking_billet':
-      // create new "Boleto bancário"
-      break
-    case 'online_debit':
-      redirectToPayment = true
-      break
-    default:
-      break
+  const transaction = {
+    amount: amount.total
   }
 
-  res.send({
-    redirect_to_payment: redirectToPayment,
-    transaction
-  })
+  if (params.payment_method.code === 'banking_billet') {
+    const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId)
+    try {
+      if (appData.beneficiary_code) {
+        await banrisul.preparing
+
+        const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
+        const docAuthBarisul = documentRef?.data()
+        const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
+        const banrisulAxios = banrisul.axios
+
+        const ourNumber = getOurNumber(lastBilletNumber)
+        const body = createBodyToBillet(appData, params, ourNumber)
+
+        console.log('>>body ', JSON.stringify(body))
+        redirectToPayment = false
+
+        // test
+        // const data = require('../../../lib/billet/billet-test')
+        const { data } = await banrisulAxios.post('/boletos', body, {
+          headers: {
+            'bergs-beneficiario': appData.beneficiary_code
+          }
+        })
+
+        console.log('>> boleto ', JSON.stringify(data))
+        transaction.banking_billet = {
+          code: data.titulo?.linha_digitavel,
+          valid_thru: new Date(data.titulo?.data_vencimento).toISOString(),
+          link: `${baseUri}/billet?orderId=${orderId}`
+        }
+
+        transaction.intermediator = {
+          transaction_id: data?.titulo?.nosso_numero,
+          transaction_reference: data?.titulo?.nosso_numero,
+          transaction_code: data.retorno
+        }
+
+        await collectionBillet.doc(orderId).set({ ...data, storeId, isHomologation: appData.is_homologation })
+
+        banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
+          .catch(console.error)
+
+        res.send({
+          redirect_to_payment: redirectToPayment,
+          transaction
+        })
+      } else {
+        throw new Error('Beneficiary code not found')
+      }
+    } catch (error) {
+      console.log(error.response)
+      // try to debug request error
+      const errCode = 'BANRISUL_TRANSACTION_ERR'
+      let { message } = error
+      const err = new Error(`${errCode} #${storeId} - ${orderId} => ${message}`)
+      if (error.response) {
+        const { status, data } = error.response
+        if (status !== 401 && status !== 403) {
+          err.payment = JSON.stringify(transaction)
+          err.status = status
+          if (typeof data === 'object' && data) {
+            err.response = JSON.stringify(data)
+          } else {
+            err.response = data
+          }
+        } else if (data && Array.isArray(data.errors) && data.errors[0] && data.errors[0].message) {
+          message = data.errors[0].message
+        }
+      }
+      console.error(err)
+      res.status(409)
+      res.send({
+        error: errCode,
+        message
+      })
+    }
+  }
 }

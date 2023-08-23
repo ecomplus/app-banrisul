@@ -12,38 +12,83 @@ exports.post = ({ appSdk }, req, res) => {
    * https://github.com/ecomplus/app-custom-payment/blob/master/functions/routes/ecom/modules/list-payments.js
    */
 
-  const { params, application } = req.body
-  const { storeId } = req
+  const { application, params } = req.body
+  // const { storeId } = req
   // setup basic required response object
   const response = {
     payment_gateways: []
   }
-  // merge all app options configured by merchant
   const appData = Object.assign({}, application.data, application.hidden_data)
+  const isHomologation = appData.is_homologation
 
-  /* DO THE STUFF HERE TO FILL RESPONSE OBJECT WITH PAYMENT GATEWAYS */
+  const amount = { ...params.amount } || {}
 
-  /**
-   * Sample snippets:
+  if (!appData.client_id || !appData.client_secret) {
+    return res.status(409).send({
+      error: 'NO_BANRISUL_KEYS',
+      message: 'Client ID e/ou Secret da API indefinido(s) (lojista deve configurar o aplicativo)'
+    })
+  }
 
   // add new payment method option
-  response.payment_gateways.push({
+  const gateway = {
     intermediator: {
-      code: 'paupay',
-      link: 'https://www.palpay.com.br',
-      name: 'paupay'
+      code: 'banrisul',
+      link: 'https://www.banrisul.com.br/',
+      name: 'Banrisul'
     },
-    payment_url: 'https://www.palpay.com.br/',
     type: 'payment',
     payment_method: {
       code: 'banking_billet',
       name: 'Boleto Bancário'
     },
-    label: 'Boleto Bancário',
-    expiration_date: appData.expiration_date || 14
-  })
+    label: `Boleto Bancário${isHomologation ? ' - Homologação' : ''}`,
+    expiration_date: appData.expiration_date || 7
+  }
 
-  */
+  const discount = appData.discount
+
+  if (discount) {
+    gateway.discount = {
+      apply_at: discount.apply_at,
+      type: discount.type,
+      value: discount.value
+    }
+
+    // check amount value to apply discount
+    if (amount.total < (discount.min_amount || 0)) {
+      delete gateway.discount
+    } else {
+      delete discount.min_amount
+
+      // fix local amount object
+      const applyDiscount = discount.apply_at
+
+      const maxDiscount = amount[applyDiscount || 'subtotal']
+      let discountValue
+      if (discount.type === 'percentage') {
+        discountValue = maxDiscount * discount.value / 100
+      } else {
+        discountValue = discount.value
+        if (discountValue > maxDiscount) {
+          discountValue = maxDiscount
+        }
+      }
+
+      if (discountValue) {
+        amount.discount = (amount.discount || 0) + discountValue
+        amount.total -= discountValue
+        if (amount.total < 0) {
+          amount.total = 0
+        }
+      }
+    }
+    if (response.discount_option) {
+      response.discount_option.min_amount = discount.min_amount
+    }
+  }
+
+  response.payment_gateways.push(gateway)
 
   res.send(response)
 }

@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "",
-    "short_description": "",
-    "category": "tools"
+    "title": "Boleto Banrisul",
+    "short_description": "Pagamento via boleto bancário diretamente pelo banco Banrisul",
+    "category": "sales"
   }
 }

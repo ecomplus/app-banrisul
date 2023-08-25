@@ -24,6 +24,8 @@ const { app, procedures } = require('./ecom.config')
 // https://github.com/ecomplus/application-sdk
 const { ecomServerIps, setup } = require('@ecomplus/application-sdk')
 
+const checkBillet = require('./lib/banrisul/check-billet')
+
 server.use(bodyParser.urlencoded({ extended: false }))
 server.use(bodyParser.json())
 
@@ -143,3 +145,12 @@ exports.updateTokens = functions.pubsub.schedule(cron).onRun(() => {
   })
 })
 console.log(`-- Sheduled update E-Com Plus tokens '${cron}'`)
+
+// schedule check billets
+const cronCheckBillets = '10 3 * * *'
+exports.checkBillets = functions.pubsub.schedule(cronCheckBillets).onRun(() => {
+  return prepareAppSdk().then(appSdk => {
+    return checkBillet(admin, appSdk)
+  })
+})
+console.log(`-- Sheduled check billets Banrisul '${cronCheckBillets}'`)

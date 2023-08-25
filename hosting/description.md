@@ -1,6 +1,6 @@
 # Boleto Banrisul
 
-# Antes de comerçar
+## Antes de comerçar
 Será necessário solicitar ao banco Banrisul as credenciais para a homologação do aplicativo. 
 
 Ref.: [Documentação Api Cobrança Banrisul](https://developers-openbanking.banrisul.com.br/pages/PORTAL_V1.6.6/docs/clientes-banrisul/api-cobranca-v1.1.0.html)

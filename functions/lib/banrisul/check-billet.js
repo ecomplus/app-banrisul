@@ -51,7 +51,7 @@ module.exports = async (admin, appSdk) => {
             storeIds.push(storeId)
             const auth = await appSdk.getAuth(storeId)
             const appData = await getAppData({ appSdk, storeId, auth })
-            const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId)
+            const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId, appData.envoriment === 'teste')
 
             await banrisul.preparing
             const barisulAxios = banrisul.axios
@@ -59,14 +59,14 @@ module.exports = async (admin, appSdk) => {
             for (let j = 0; j < docsBillets.length; j++) {
               try {
                 const { titulo, orderId, refDoc } = docsBillets[j]
-                const idBoleto = titulo.nosso_numero
-                console.log('>> orderId: ', orderId, ' nosso numero', idBoleto)
+                const idBoleto = appData.envoriment === 'teste' ? '264' : titulo.nosso_numero
+                console.log('>> orderId: ', orderId, ' nosso numero', idBoleto, ' envoriment: ', appData.envoriment)
 
                 const { data: billet } = await barisulAxios.get(
                   `/boletos/${idBoleto}`,
                   {
                     headers: {
-                      'bergs-beneficiario': appData.beneficiary_code
+                      'bergs-beneficiario': appData.envoriment === 'teste' ? '0010000001088' : appData.beneficiary_code
                     }
                   }
                 )

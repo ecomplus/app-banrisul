@@ -165,12 +165,17 @@ const app = {
       },
       hide: true
     },
-    is_homologation: {
+    envoriment: {
       schema: {
-        type: 'boolean',
-        title: 'Ambiente de Homologação',
-        description: 'Habilitar ambiente para Homologação',
-        default: false
+        type: 'string',
+        enum: [
+          'teste',
+          'homologação',
+          'produção'
+        ],
+        default: 'produção',
+        title: 'Ambiente',
+        description: 'Definir o ambiente'
       },
       hide: false
     },

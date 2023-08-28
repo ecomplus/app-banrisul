@@ -1,6 +1,6 @@
 const { baseUri } = require('../../../__env')
 const Banrisul = require('../../../lib/banrisul/auth/create-access')
-const getOurNumber = require('../../../lib/banrisul/calculate-our-number')
+// const getOurNumber = require('../../../lib/banrisul/calculate-our-number')
 const createBodyToBillet = require('../../../lib/banrisul/payload-to-billet')
 
 exports.post = async ({ appSdk, admin }, req, res) => {
@@ -34,56 +34,60 @@ exports.post = async ({ appSdk, admin }, req, res) => {
 
   if (params.payment_method.code === 'banking_billet') {
     try {
-      const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId)
-      console.log('>> s: ', storeId, ' beneficiary Code: ', appData.beneficiary_code)
-      if (appData.beneficiary_code) {
-        await banrisul.preparing
+      console.log('>> s: ', storeId, ' beneficiary Code: ', appData.beneficiary_code, ' envoriment: ', appData.envoriment)
+      const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId, appData.envoriment === 'teste')
+      // if (appData.beneficiary_code) {
+      await banrisul.preparing
 
-        //
-        // const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
-        // const docAuthBarisul = documentRef?.data()
-        // const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
-        const banrisulAxios = banrisul.axios
+      //
+      // const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
+      // const docAuthBarisul = documentRef?.data()
+      // const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
+      const banrisulAxios = banrisul.axios
 
-        // const ourNumber = getOurNumber(lastBilletNumber)
-        const body = createBodyToBillet(appData, params)
+      // const ourNumber = getOurNumber(lastBilletNumber)
+      const body = createBodyToBillet(appData, params)
 
-        console.log('>>body ', JSON.stringify(body))
-        redirectToPayment = false
+      console.log('>>body ', JSON.stringify(body))
+      redirectToPayment = false
 
-        // test
-        // const data = require('../../../lib/billet/billet-test')
-        const { data } = await banrisulAxios.post('/boletos', body, {
-          headers: {
-            'bergs-beneficiario': appData.beneficiary_code
-          }
-        })
-
-        console.log('>> boleto ', JSON.stringify(data))
-        transaction.banking_billet = {
-          code: data.titulo?.linha_digitavel,
-          valid_thru: new Date(data.titulo?.data_vencimento).toISOString(),
-          link: `${baseUri}/billet?orderId=${orderId}`
-        }
-
-        transaction.intermediator = {
-          transaction_id: data?.titulo?.nosso_numero,
-          transaction_reference: data?.titulo?.nosso_numero,
-          transaction_code: data.retorno
-        }
-
-        await collectionBillet.doc(orderId).set({ ...data, storeId, isHomologation: appData.is_homologation })
-
-        // banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
-        //   .catch(console.error)
-
-        res.send({
-          redirect_to_payment: redirectToPayment,
-          transaction
-        })
-      } else {
+      // test
+      // const data = require('../../../lib/billet/billet-test')
+      if (!appData.beneficiary_code && appData.envoriment !== 'teste') {
         throw new Error('Beneficiary code not found')
       }
+
+      const { data } = await banrisulAxios.post('/boletos', body, {
+        headers: {
+          'bergs-beneficiario': appData.envoriment === 'teste' ? '0010000001088' : appData.beneficiary_code
+        }
+      })
+
+      console.log('>> boleto ', JSON.stringify(data))
+      transaction.banking_billet = {
+        code: data.titulo?.linha_digitavel,
+        valid_thru: new Date(data.titulo?.data_vencimento).toISOString(),
+        link: `${baseUri}/billet?orderId=${orderId}`
+      }
+
+      transaction.intermediator = {
+        transaction_id: data?.titulo?.nosso_numero,
+        transaction_reference: data?.titulo?.nosso_numero,
+        transaction_code: data.retorno
+      }
+
+      await collectionBillet.doc(orderId).set({ ...data, storeId, envoriment: appData.envoriment })
+
+      // banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
+      //   .catch(console.error)
+
+      res.send({
+        redirect_to_payment: redirectToPayment,
+        transaction
+      })
+      // } else {
+      //   throw new Error('Beneficiary code not found')
+      // }
     } catch (error) {
       console.log(error.response)
       // try to debug request error

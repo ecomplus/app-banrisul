@@ -1,8 +1,8 @@
 const axios = require('./create-axios')
 const qs = require('qs')
 
-module.exports = (clientId, clientSecret) => new Promise((resolve, reject) => {
-  const banrisulAxios = axios(null, true)
+module.exports = (clientId, clientSecret, isSandbox) => new Promise((resolve, reject) => {
+  const banrisulAxios = axios(null, true, isSandbox)
 
   const request = async (isRetry) => {
     try {

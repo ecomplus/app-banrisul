@@ -64,8 +64,8 @@ Após cadastro realizado no portal do Desenvolvedor do Banrisul, obtenha as cred
 
 ## 3) Homologação
 
-* Crie um pedido com a opção homologação habilitada.
-* Em seguida desabilite a opção homologação e crie 5 pedidos e salve os PDFs 
+* Crie um pedido com a opção de ambiente  selecionada em `homologação`.
+* Em seguida na opção de ambiente selecione `produção` e crie 5 pedidos e salve os PDFs 
 * Envie os 5 PDFs juntamente com os códigos de retornos, que são códigos das transações, para o e-mail: `atendimento_teste_cobranca@banrisul.com.br` para conferência.
 
 <br />

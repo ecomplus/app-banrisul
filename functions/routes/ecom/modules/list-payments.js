@@ -19,7 +19,7 @@ exports.post = ({ appSdk }, req, res) => {
     payment_gateways: []
   }
   const appData = Object.assign({}, application.data, application.hidden_data)
-  const isHomologation = appData.is_homologation
+  // const isProdution = appData.envoriment === 'produção'
 
   const amount = { ...params.amount } || {}
 
@@ -42,7 +42,7 @@ exports.post = ({ appSdk }, req, res) => {
       code: 'banking_billet',
       name: 'Boleto Bancário'
     },
-    label: `Boleto Bancário${isHomologation ? ' - Homologação' : ''}`,
+    label: `Boleto Bancário${appData.envoriment !== 'produção' ? ` - ${appData.envoriment}` : ''}`,
     expiration_date: appData.expiration_date || 7
   }
 

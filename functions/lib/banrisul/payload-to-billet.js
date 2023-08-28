@@ -10,14 +10,14 @@ const parseAddress = to => ({
   complement: to.complement || ''
 })
 
-const createBodyToBillet = (appData, params, ourNumber) => {
+const createBodyToBillet = (appData, params) => {
   const { amount, buyer, to } = params
   const {
     fees, // Juros
     tax // Multa
   } = appData
 
-  const isHomologation = appData.is_homologation
+  const isTest = appData.envoriment === 'homologação' || appData.envoriment === 'teste'
   const daysToExpiry = appData.days_to_expiry
 
   const createdAt = new Date()
@@ -115,7 +115,7 @@ const createBodyToBillet = (appData, params, ourNumber) => {
 
   Object.assign(titulo, { pagador })
 
-  return { ambiente: isHomologation ? 'T' : 'P', titulo }
+  return { ambiente: isTest ? 'T' : 'P', titulo }
 }
 
 module.exports = createBodyToBillet

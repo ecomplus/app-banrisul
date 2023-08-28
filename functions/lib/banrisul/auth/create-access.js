@@ -1,7 +1,7 @@
 const createAxios = require('./create-axios')
 const getOAuth = require('./get-token')
 
-module.exports = function (clientId, clientSecret, storeId, firestoreColl = 'banrisul_auth') {
+module.exports = function (clientId, clientSecret, storeId, isSandbox, firestoreColl = 'banrisul_auth') {
   const self = this
 
   let documentRef
@@ -14,11 +14,11 @@ module.exports = function (clientId, clientSecret, storeId, firestoreColl = 'ban
 
   this.preparing = new Promise((resolve, reject) => {
     const authenticate = (accessToken, documentRef) => {
-      self.axios = createAxios(accessToken)
+      self.axios = createAxios(accessToken, false, isSandbox)
       // self.documentRef = documentRef
       if (documentRef) {
         documentRef
-          .set({ accessToken }, { merge: true })
+          .set({ accessToken, isSandbox }, { merge: true })
           .catch(console.error)
       }
       resolve(self)
@@ -26,7 +26,7 @@ module.exports = function (clientId, clientSecret, storeId, firestoreColl = 'ban
 
     const handleAuth = () => {
       console.log('> Banrisul Auth02 ', storeId)
-      getOAuth(clientId, clientSecret)
+      getOAuth(clientId, clientSecret, isSandbox)
         .then((accessToken) => {
           console.log(`>> s:${storeId} token => ${accessToken}`)
           authenticate(accessToken, documentRef)

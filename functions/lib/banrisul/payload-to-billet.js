@@ -42,7 +42,7 @@ const createBodyToBillet = (appData, params) => {
       codigo: 3
     },
     valor_nominal: (amount.total).toFixed(2),
-    // nosso_numero: ourNumber,
+    // nosso_numero: ourNumber, // OBS.: in case it is necessary to calculate our number
     seu_numero: Date.now().toString()
   }
 

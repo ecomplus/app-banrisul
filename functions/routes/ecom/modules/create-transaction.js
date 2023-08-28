@@ -36,10 +36,9 @@ exports.post = async ({ appSdk, admin }, req, res) => {
     try {
       console.log('>> s: ', storeId, ' beneficiary Code: ', appData.beneficiary_code, ' envoriment: ', appData.envoriment)
       const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId, appData.envoriment === 'teste')
-      // if (appData.beneficiary_code) {
       await banrisul.preparing
 
-      //
+      // OBS.: in case it is necessary to calculate our number
       // const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
       // const docAuthBarisul = documentRef?.data()
       // const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
@@ -78,6 +77,7 @@ exports.post = async ({ appSdk, admin }, req, res) => {
 
       await collectionBillet.doc(orderId).set({ ...data, storeId, envoriment: appData.envoriment })
 
+      // OBS.: in case it is necessary to calculate our number
       // banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
       //   .catch(console.error)
 
@@ -85,9 +85,6 @@ exports.post = async ({ appSdk, admin }, req, res) => {
         redirect_to_payment: redirectToPayment,
         transaction
       })
-      // } else {
-      //   throw new Error('Beneficiary code not found')
-      // }
     } catch (error) {
       console.log(error.response)
       // try to debug request error

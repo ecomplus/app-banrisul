@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/ecomplus/application-starter/compare/v1.1.0...v1.1.1) (2023-08-28)
+
+
+### Bug Fixes
+
+* **auth:** disable sandbox ([50a9184](https://github.com/ecomplus/application-starter/commit/50a9184b81529c8c7cd1c88d9b01804abe8010ea))
+* **auth:** update auth and create transaction ([6bf1907](https://github.com/ecomplus/application-starter/commit/6bf19075d7a1beea712fbaf0c6831d2c8e57a74a))
+* **ecom config:** add field envoriment ([d38b7b3](https://github.com/ecomplus/application-starter/commit/d38b7b367eda2781909ca2012db4abd9350811f9))
+
 ## 1.1.0 (2023-08-25)
 
 

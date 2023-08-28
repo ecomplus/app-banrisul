@@ -5,7 +5,6 @@ module.exports = function (clientId, clientSecret, storeId, firestoreColl = 'ban
   const self = this
 
   let documentRef
-  // const hashLogin = Buffer.from(`${galaxpayId}:${galaxpayHash}`).toString('base64')
 
   if (firestoreColl) {
     documentRef = require('firebase-admin')
@@ -16,7 +15,7 @@ module.exports = function (clientId, clientSecret, storeId, firestoreColl = 'ban
   this.preparing = new Promise((resolve, reject) => {
     const authenticate = (accessToken, documentRef) => {
       self.axios = createAxios(accessToken)
-      self.documentRef = documentRef
+      // self.documentRef = documentRef
       if (documentRef) {
         documentRef
           .set({ accessToken }, { merge: true })

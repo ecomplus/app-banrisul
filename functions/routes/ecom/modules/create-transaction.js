@@ -33,18 +33,20 @@ exports.post = async ({ appSdk, admin }, req, res) => {
   }
 
   if (params.payment_method.code === 'banking_billet') {
-    const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId)
     try {
+      const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId)
+      console.log('>> s: ', storeId, ' beneficiary Code: ', appData.beneficiary_code)
       if (appData.beneficiary_code) {
         await banrisul.preparing
 
-        const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
-        const docAuthBarisul = documentRef?.data()
-        const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
+        //
+        // const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
+        // const docAuthBarisul = documentRef?.data()
+        // const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
         const banrisulAxios = banrisul.axios
 
-        const ourNumber = getOurNumber(lastBilletNumber)
-        const body = createBodyToBillet(appData, params, ourNumber)
+        // const ourNumber = getOurNumber(lastBilletNumber)
+        const body = createBodyToBillet(appData, params)
 
         console.log('>>body ', JSON.stringify(body))
         redirectToPayment = false
@@ -72,8 +74,8 @@ exports.post = async ({ appSdk, admin }, req, res) => {
 
         await collectionBillet.doc(orderId).set({ ...data, storeId, isHomologation: appData.is_homologation })
 
-        banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
-          .catch(console.error)
+        // banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
+        //   .catch(console.error)
 
         res.send({
           redirect_to_payment: redirectToPayment,

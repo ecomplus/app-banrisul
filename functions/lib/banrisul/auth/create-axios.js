@@ -1,6 +1,6 @@
 const axios = require('axios')
 module.exports = (accessToken, isGetToken) => {
-  const isSandbox = false // TODO:
+  const isSandbox = false // TODO: false
 
   const headers = {
     'Content-Type': 'application/json'

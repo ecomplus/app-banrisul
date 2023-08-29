@@ -42,7 +42,7 @@ exports.post = ({ appSdk }, req, res) => {
       code: 'banking_billet',
       name: 'Boleto Bancário'
     },
-    label: `Boleto Bancário${appData.envoriment !== 'produção' ? ` - ${appData.envoriment}` : ''}`,
+    label: `Boleto Bancário${appData.envoriment && appData.envoriment !== 'produção' ? ` - ${appData.envoriment}` : ''}`,
     expiration_date: appData.expiration_date || 7
   }
 

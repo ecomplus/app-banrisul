@@ -10,6 +10,16 @@ const parseAddress = to => ({
   complement: to.complement || ''
 })
 
+const abbreviateAddress = (address) => {
+  return address
+    .replace('RUA', 'R.')
+    .replace('AVENIDA', 'AV.')
+    .replace('SANTO', 'STO.')
+    .replace('SANTA', 'STA.')
+    .replace('LOJA', 'LJ.')
+    .substring(0, 35)
+}
+
 const createBodyToBillet = (appData, params) => {
   const { amount, buyer, to } = params
   const {
@@ -100,17 +110,23 @@ const createBodyToBillet = (appData, params) => {
     }
   }
 
-  const address = to && to.street ? parseAddress(to) : parseAddress(params.billing_address)
+  const addressObj = to && to.street ? parseAddress(to) : parseAddress(params.billing_address)
+  let address = `${addressObj.street}, ${addressObj.number}`
+  if (addressObj.complement) {
+    address += `Compl.: ${addressObj.complement}`
+  }
+
+  const endereco = abbreviateAddress(address.toUpperCase())
 
   const pagador = {
     aceite: 'A',
-    cep: address.zipCode,
-    cidade: (address.city).toUpperCase(),
+    cep: addressObj.zipCode,
+    cidade: (addressObj.city).toUpperCase().substring(0, 15),
     cpf_cnpj: buyer.doc_number,
-    endereco: `${address.street}, ${address.number} Complemento: ${address.complement}`.toUpperCase(),
-    nome: (buyer.fullname).toUpperCase(),
+    endereco,
+    nome: (buyer.fullname).toUpperCase().substring(0, 40),
     tipo_pessoa: buyer.registry_type.toUpperCase() === 'P' ? 'F' : 'J',
-    uf: (address.stateCode).toUpperCase()
+    uf: (addressObj.stateCode).toUpperCase()
   }
 
   Object.assign(titulo, { pagador })

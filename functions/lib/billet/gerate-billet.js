@@ -36,7 +36,7 @@ const generateBilletBanking = (billet, isSandbox) => new Promise((resolve, rejec
 
     /*
     const fs = require('fs')
-    const dirFile = join(dirAssets, '/tmp/billet.pdf')
+    const dirFile = join(dirAssets, '/billet.pdf')
     pdf.pipe(fs.createWriteStream(dirFile))
     // */
 

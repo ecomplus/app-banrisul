@@ -3,6 +3,7 @@ const {
   colStart,
   line
 } = require('./dimensions')
+const { abbreviateAddress } = require('../../banrisul/payload-to-billet')
 
 const parseEspecie = {
   '02': 'DM',
@@ -166,18 +167,79 @@ const handleCodeBar = (text) => {
     }, start) + stop
 }
 
+const handleBenifeciario = (beneficiario) => {
+  let complement = ''
+
+  const arrayDocNumber = beneficiario.cpf_cnpj?.split('')
+  if (beneficiario.tipo_pessoa === 'J') {
+    complement += ' - '
+    complement += arrayDocNumber.reduce((accumulator, digit, index) => {
+      let rule = ''
+      if (index === 2 || index === 5) {
+        rule = '.'
+      } else if (index === 8) {
+        rule = '/'
+      } else if (index === 12) {
+        rule = '-'
+      }
+      return accumulator + rule + digit
+    }, '')
+  } else {
+    complement += ' - '
+    complement += arrayDocNumber.reduce((accumulator, digit, index) => {
+      let rule = ''
+      if (index === 3 || index === 6) {
+        rule = '.'
+      } else if (index === 9) {
+        rule = '-'
+      }
+      return accumulator + rule + digit
+    }, '')
+  }
+
+  if (beneficiario.address) {
+    complement += ` ${abbreviateAddress(beneficiario.address?.toUpperCase())}`
+  }
+
+  if (beneficiario.zipCode) {
+    const arrayZipCode = beneficiario.zipCode?.split('')
+    let text = ' - CEP: '
+    text += arrayZipCode.reduce((accumulator, digit, index) => {
+      let rule = ''
+      if (index === 4) {
+        rule = '-'
+      }
+      return accumulator + rule + digit
+    }, '')
+    complement += text
+  }
+
+  const name = beneficiario?.nome_fantasia || beneficiario?.nome
+  let fullBeneficiario
+
+  if ((name + complement).length > 95) {
+    const end = (name + complement).length - 95
+    fullBeneficiario = name.substring(0, end) + complement
+  } else {
+    fullBeneficiario = name + complement
+  }
+
+  return fullBeneficiario
+}
+
 const renderPdf = (pdf, lastLine, billet, isReceipt, isSandbox) => {
   const posX = colStart + 90
   const withCol = spaceCol - 20
   const posCol = colStart + 5
-  const beneficiario = billet?.beneficiario
   const pagador = billet?.pagador
+
+  const fullBeneficiario = handleBenifeciario(billet?.beneficiario)
 
   addText(pdf, 'bold', 18, '041-8', posX + 10, line(lastLine + 1, 7, 'write'), withCol, 'center')
 
   if (isReceipt) {
     addText(pdf, 'normal', 8, 'SAC BANRISUL: 0800-646-1515 OUVIDORIA BANRISUL: 0800-644-2200', posX + withCol * 1.5, line(lastLine + 1, 7, 'write'), withCol * 1.5)
-    addText(pdf, 'bold', 10, 'RECIBO PAGADOR', posX + (3.5 * withCol), line(lastLine + 1, 7, 'write'), withCol)
+    addText(pdf, 'bold', 10, 'RECIBO DO PAGADOR', posX + (3.4 * withCol), line(lastLine + 1, 7, 'write'), withCol * 2)
   } else {
     addText(pdf, 'bold', 12, handleDigitableLine(billet.linha_digitavel), posX + withCol, line(lastLine + 1, 2, 'write'), withCol * 3.5, 'right')
   }
@@ -191,10 +253,10 @@ const renderPdf = (pdf, lastLine, billet, isReceipt, isSandbox) => {
   // row 2
   addText(pdf, 'bold', 5, 'BENEFICIÁRIO', posCol, line(lastLine + 3, 8, 'write'), withCol * 3)
   // Beneficiário nome
-  addText(pdf, null, 9, (beneficiario?.nome_fantasia || beneficiario?.nome), colStart + 5, line(lastLine + 3, -2, 'write'), withCol * 4)
+  addText(pdf, null, 9, fullBeneficiario, colStart + 5, line(lastLine + 3, -2, 'write'), withCol * 5)
   addText(pdf, 'bold', 5, titles.agenciaECodigoDoBeneficiario?.toUpperCase(), posX + (withCol * 3.5), line(lastLine + 3, 8, 'write'), withCol)
   // Código
-  addText(pdf, 'normal', 9, beneficiario?.codigo, posX + (withCol * 3.5), line(lastLine + 3, -2, 'write'), withCol, 'right')
+  addText(pdf, 'normal', 9, billet?.beneficiario?.codigo, posX + (withCol * 3.5), line(lastLine + 3, -2, 'write'), withCol, 'right')
   //
 
   // row 3

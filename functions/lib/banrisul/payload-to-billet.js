@@ -134,4 +134,7 @@ const createBodyToBillet = (appData, params) => {
   return { ambiente: isTest ? 'T' : 'P', titulo }
 }
 
-module.exports = createBodyToBillet
+module.exports = {
+  createBodyToBillet,
+  abbreviateAddress
+}

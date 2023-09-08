@@ -1,7 +1,7 @@
 const { baseUri } = require('../../../__env')
 const Banrisul = require('../../../lib/banrisul/auth/create-access')
 // const getOurNumber = require('../../../lib/banrisul/calculate-our-number')
-const createBodyToBillet = require('../../../lib/banrisul/payload-to-billet')
+const { createBodyToBillet } = require('../../../lib/banrisul/payload-to-billet')
 
 exports.post = async ({ appSdk, admin }, req, res) => {
   const collectionBillet = admin.firestore().collection('billets')
@@ -35,6 +35,13 @@ exports.post = async ({ appSdk, admin }, req, res) => {
   if (params.payment_method.code === 'banking_billet') {
     try {
       console.log('>> s: ', storeId, ' beneficiary Code: ', appData.beneficiary_code, ' envoriment: ', appData.envoriment)
+      const auth = await appSdk.getAuth(storeId)
+      const { response: { data: order } } = (await appSdk.apiRequest(storeId, `/orders/${orderId}.json`, 'GET', null, auth))
+      const zipCode = order?.shipping_lines[0]?.from?.zip
+
+      const { response: { data: store } } = (await appSdk.apiRequest(storeId, '/stores/me.json', 'GET', null, auth))
+      const address = store?.address
+
       const banrisul = new Banrisul(appData.client_id, appData.client_secret, storeId, appData.envoriment === 'teste')
       await banrisul.preparing
 
@@ -73,6 +80,18 @@ exports.post = async ({ appSdk, admin }, req, res) => {
         transaction_id: data?.titulo?.nosso_numero,
         transaction_reference: data?.titulo?.nosso_numero,
         transaction_code: data.retorno
+      }
+
+      const beneficiario = data.titulo?.beneficiario
+
+      if (beneficiario) {
+        if (zipCode) {
+          Object.assign(beneficiario, { zipCode })
+        }
+
+        if (address) {
+          Object.assign(beneficiario, { address })
+        }
       }
 
       await collectionBillet.doc(orderId).set({ ...data, storeId, envoriment: appData.envoriment })

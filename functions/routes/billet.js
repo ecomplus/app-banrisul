@@ -10,7 +10,29 @@ exports.get = async ({ appSdk, admin }, req, res) => {
       billet = doc.data()
     }
     if (billet) {
-      const { titulo } = billet
+      const { titulo, storeId } = billet
+
+      if (!titulo?.beneficiario?.address || !titulo?.beneficiario?.zipCode) {
+        const { beneficiario } = titulo
+        const auth = await appSdk.getAuth(storeId)
+
+        if (!titulo?.benifeciario?.zipCode) {
+          const { response: { data: order } } = (await appSdk.apiRequest(storeId, `/orders/${orderId}.json`, 'GET', null, auth))
+          const zipCode = order?.shipping_lines[0]?.from?.zip
+          if (zipCode) {
+            Object.assign(beneficiario, { zipCode })
+          }
+        }
+
+        if (!titulo?.benifeciario?.address) {
+          const { response: { data: store } } = (await appSdk.apiRequest(storeId, '/stores/me.json', 'GET', null, auth))
+          const address = store?.address
+
+          if (address) {
+            Object.assign(beneficiario, { address })
+          }
+        }
+      }
 
       const bufferFile = await geratePdf(titulo, billet.isSandbox)
       res.setHeader('Content-Length', Buffer.byteLength(bufferFile))

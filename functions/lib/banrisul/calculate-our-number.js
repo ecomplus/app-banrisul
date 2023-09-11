@@ -41,11 +41,13 @@ const mod11 = (number, mod10) => {
   return 11 - rest
 }
 
-const ourNumber = (number) => {
+const ourNumber = (number, isSandbox, storeId, orderId) => {
   const dvMod10 = mod10(number)
   const dvMod11 = mod11(number, dvMod10)
+  // console.log(`>> number:  ${number} mod10: ${dvMod10} mod11: ${dvMod11} <=  ${storeId} #${orderId}`)
+  const ourNumber = isSandbox ? '264' : `${number}${dvMod10}${dvMod11}`
 
-  return `${number}${dvMod10}${dvMod11}`.padStart(10, '0')
+  return ourNumber.padStart(10, '0')
 }
 
 module.exports = ourNumber

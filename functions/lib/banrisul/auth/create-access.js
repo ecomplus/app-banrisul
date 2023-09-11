@@ -15,7 +15,7 @@ module.exports = function (clientId, clientSecret, storeId, isSandbox, firestore
   this.preparing = new Promise((resolve, reject) => {
     const authenticate = (accessToken, documentRef) => {
       self.axios = createAxios(accessToken, false, isSandbox)
-      // self.documentRef = documentRef
+      self.documentRef = documentRef
       if (documentRef) {
         documentRef
           .set({ accessToken, isSandbox }, { merge: true })

@@ -1,6 +1,6 @@
 const { baseUri } = require('../../../__env')
 const Banrisul = require('../../../lib/banrisul/auth/create-access')
-// const getOurNumber = require('../../../lib/banrisul/calculate-our-number')
+const getOurNumber = require('../../../lib/banrisul/calculate-our-number')
 const { createBodyToBillet } = require('../../../lib/banrisul/payload-to-billet')
 
 exports.post = async ({ appSdk, admin }, req, res) => {
@@ -46,26 +46,29 @@ exports.post = async ({ appSdk, admin }, req, res) => {
       await banrisul.preparing
 
       // OBS.: in case it is necessary to calculate our number
-      // const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
-      // const docAuthBarisul = documentRef?.data()
-      // const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
+      const documentRef = banrisul.documentRef && await banrisul.documentRef.get()
+      const docAuthBarisul = documentRef?.data()
+      const lastBilletNumber = (docAuthBarisul?.lastBilletNumber || 0) + 1
+
       const banrisulAxios = banrisul.axios
 
-      // const ourNumber = getOurNumber(lastBilletNumber)
-      const body = createBodyToBillet(appData, params)
+      const ourNumber = getOurNumber(lastBilletNumber, appData.envoriment === 'teste', storeId, orderId)
+      const body = createBodyToBillet(appData, params, ourNumber)
 
       console.log('>>body ', JSON.stringify(body))
       redirectToPayment = false
 
-      // test
-      // const data = require('../../../lib/billet/billet-test')
       if (!appData.beneficiary_code && appData.envoriment !== 'teste') {
         throw new Error('Beneficiary code not found')
       }
 
+      // test
+      // const data = require('../../../lib/billet/billet-test')
+
+      const beneficiaryCode = appData.envoriment === 'teste' ? '0010000001088' : appData.beneficiary_code
       const { data } = await banrisulAxios.post('/boletos', body, {
         headers: {
-          'bergs-beneficiario': appData.envoriment === 'teste' ? '0010000001088' : appData.beneficiary_code
+          'bergs-beneficiario': beneficiaryCode
         }
       })
 
@@ -96,9 +99,23 @@ exports.post = async ({ appSdk, admin }, req, res) => {
 
       await collectionBillet.doc(orderId).set({ ...data, storeId, envoriment: appData.envoriment })
 
+      if (appData.envoriment && appData.envoriment !== 'produção') {
+        transaction.notes = `<div style="display:block;margin:0 auto">
+        <a href='${baseUri}/homologacao?orderId=${orderId}&request=${Buffer.from(JSON.stringify(body), 'utf-8').toString('base64url')}'>
+        <button type="button" class="btn btn-sm btn-light">Download Requisição</button>
+        <a>
+        </div>` +
+        '<br/>' +
+        `<div style="display:block;margin:0 auto">
+        <a href='${baseUri}/homologacao?orderId=${orderId}&response=${Buffer.from(JSON.stringify(data), 'utf-8').toString('base64url')}'>
+        <button type="button" class="btn btn-sm btn-light">Download Retorno</button>
+        <a>
+        </div>`
+      }
+
       // OBS.: in case it is necessary to calculate our number
-      // banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
-      //   .catch(console.error)
+      banrisul.documentRef.set({ lastBilletNumber }, { merge: true })
+        .catch(console.error)
 
       res.send({
         redirect_to_payment: redirectToPayment,

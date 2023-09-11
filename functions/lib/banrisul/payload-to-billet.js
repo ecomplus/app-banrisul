@@ -20,7 +20,7 @@ const abbreviateAddress = (address) => {
     .substring(0, 35)
 }
 
-const createBodyToBillet = (appData, params) => {
+const createBodyToBillet = (appData, params, ourNumber) => {
   const { amount, buyer, to } = params
   const {
     fees, // Juros
@@ -52,7 +52,7 @@ const createBodyToBillet = (appData, params) => {
       codigo: 3
     },
     valor_nominal: (amount.total).toFixed(2),
-    // nosso_numero: ourNumber, // OBS.: in case it is necessary to calculate our number
+    nosso_numero: ourNumber, // OBS.: in case it is necessary to calculate our number
     seu_numero: Date.now().toString()
   }
 
